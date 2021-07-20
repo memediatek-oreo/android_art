@@ -38,6 +38,9 @@
 #include "utils.h"
 #include "vdex_file.h"
 #include "class_loader_context.h"
+#ifdef ART_TARGET_ANDROID
+#include "cutils/properties.h"
+#endif
 
 namespace art {
 
@@ -675,6 +678,14 @@ OatFileAssistant::ResultOfAttemptToUpdate OatFileAssistant::GenerateOatFileNoChe
       const ClassLoaderContext* class_loader_context,
       std::string* error_msg) {
   CHECK(error_msg != nullptr);
+#ifdef ART_TARGET_ANDROID
+  char vm_property[100];
+  property_get("debug.vm.dex2oat", vm_property, "");
+  if(strncmp(vm_property,  "true", sizeof("true")) == 0){
+    LOG(INFO) << "koala GenerateOatFileNoChecks return ";
+    return kUpdateNotAttempted;
+  }
+#endif
 
   Runtime* runtime = Runtime::Current();
   if (!runtime->IsDex2OatEnabled()) {

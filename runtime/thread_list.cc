@@ -249,6 +249,7 @@ class DumpCheckpoint FINAL : public Closure {
 void ThreadList::Dump(std::ostream& os, bool dump_native_stack) {
   Thread* self = Thread::Current();
   {
+    CHECK(!Locks::thread_list_lock_->IsExclusiveHeld(self)) << "Reentrant lock error.";
     MutexLock mu(self, *Locks::thread_list_lock_);
     os << "DALVIK THREADS (" << list_.size() << "):\n";
   }

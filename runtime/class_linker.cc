@@ -116,6 +116,9 @@
 #include "utils/dex_cache_arrays_layout-inl.h"
 #include "verifier/method_verifier.h"
 #include "well_known_classes.h"
+#ifdef ART_TARGET_ANDROID
+#include "cutils/properties.h"
+#endif
 
 namespace art {
 
@@ -4208,7 +4211,16 @@ verifier::FailureKind ClassLinker::VerifyClass(
       CHECK(!Runtime::Current()->IsAotCompiler());
       mirror::Class::SetStatus(klass, mirror::Class::kStatusVerifyingAtRuntime, self);
     }
-
+#ifdef ART_TARGET_ANDROID
+char vm_property[100];
+property_get("debug.vm.dex2oat", vm_property, "");
+if(strncmp(vm_property,  "true", sizeof("true")) == 0){
+  LOG(INFO) << "koala disable verify class ";
+  mirror::Class::SetStatus(klass, mirror::Class::kStatusVerified, self);
+  EnsureSkipAccessChecksMethods(klass, image_pointer_size_);
+  return verifier::FailureKind::kNoFailure;
+}
+#endif
     // Skip verification if disabled.
     if (!Runtime::Current()->IsVerificationEnabled()) {
       mirror::Class::SetStatus(klass, mirror::Class::kStatusVerified, self);

@@ -27,6 +27,7 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <sched.h>
 
 #if defined(__linux__) && defined(__arm__)
 #include <sys/personality.h>
@@ -686,6 +687,20 @@ class Dex2Oat FINAL {
 
   void ParseJ(const StringPiece& option) {
     ParseUintOption(option, "-j", &thread_count_, Usage, /* is_long_option */ false);
+    if (thread_count_ < 3) {
+      cpu_set_t cmask;
+      unsigned long len = sizeof(cmask);
+      int pid = getpid();
+      int status;
+      CPU_ZERO(&cmask);
+      CPU_SET(0, &cmask);
+      CPU_SET(1, &cmask);
+      status = sched_setaffinity(pid, len, &cmask);
+      LOG(WARNING) << "dex2oat ched_setaffinity limit little core for current process " << pid;
+      if (status) {
+        LOG(ERROR) << "dex2oat " << status << " Could not set cpu affinity little cores for current process " << pid;
+      }
+    }
   }
 
   void ParseBase(const StringPiece& option) {
